@@ -1,37 +1,31 @@
 import Places from './Places.jsx';
-import { useEffect, useState } from 'react';
 import Error from './Error.jsx'
 import { sortPlacesByDistance } from '../loc.js'
-import {fetchAvailablePlaces} from '../http.js'
+import { fetchAvailablePlaces } from '../http.js'
+import { useFetch } from '../hooks/useFetch.js';
+
+//here i am creating a function which can be used is useFetch hook . this function incorporates the extra logic to sort the places which is not
+//present in the hook.
+async function fetchSortedPlaces() {
+  const places = await fetchAvailablePlaces();
+  return new Promise((resolve) => { //returning a promise as fetchFun in useFetch hook yield a function which returns a promise
+    navigator.geolocation.getCurrentPosition((position) => {
+      const sortedPlaces = sortPlacesByDistance(
+        places,
+        position.coords.latitude,
+        position.coords.longitude
+      );
+      resolve(sortedPlaces)
+    })
+  })
+}
 
 export default function AvailablePlaces({ onSelectPlace }) {
-  const [isFetching, setIsFetchig] = useState(false)
-  const [AvailablePlaces, setAvailablePlaces] = useState([])
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsFetchig(true)
-      try {
-        const places = await fetchAvailablePlaces()
-
-        navigator.geolocation.getCurrentPosition((position) => {
-          const sortedPlaces = sortPlacesByDistance(
-            places,
-            position.coords.latitude,
-            position.coords.longitude
-          );
-          setAvailablePlaces(sortedPlaces)
-          setIsFetchig(false)
-        })
-      } catch (error) {
-        console.log("error", error)
-        setError({ message: error.message || 'Could not fetch places please try again later' })
-        setIsFetchig(false)
-      }
-    }
-    fetchData();
-  }, [])
+  const {
+    isFetching,
+    error,
+    fetchedData: AvailablePlaces } = useFetch(fetchSortedPlaces, [])
 
   if (error) {
     return <Error title="An error occurred!" message={error.message} />

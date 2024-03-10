@@ -5,33 +5,25 @@ import Modal from './components/Modal.jsx';
 import DeleteConfirmation from './components/DeleteConfirmation.jsx';
 import logoImg from './assets/logo.png';
 import AvailablePlaces from './components/AvailablePlaces.jsx';
-import { updateUserPlaces } from './http.js'
-import { getUSerPlaces } from './http.js';
+import { getUSerPlaces, updateUserPlaces } from './http.js'
 import Error from './components/Error.jsx'
+import { useFetch } from './hooks/useFetch.js'
 
 function App() {
   const selectedPlace = useRef();
-  const [userPlaces, setUserPlaces] = useState([]);
-  const [error, setError] = useState('');
-  const [isFetching, setIsFetching] = useState(false)
-
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [errorUpdatingPlaces, setErrorUpdatingPlaces] = useState();
 
-  useEffect(() => {
-    async function getUserPlace() {
-      setIsFetching(true)
-      try {
-        const places = await getUSerPlaces();
-        setUserPlaces(places)
-      }
-      catch (error) {
-        setError({ message: error.message || 'failed to fetch places' })
-      }
-      setIsFetching(false)
-    }
-    getUserPlace();
-  }, [])
+
+  //using custom hook here to successfully fetch places,handle error here
+  //logic for managing different built in hooks like useeffect,useState, and for orchistrating http request lies in custom hook and in our component 
+  //we are using the custom hook and we get all the behaviour and functionaly in this component without adding all that code here.  
+  const {
+    isFetching,
+    error,
+    fetchedData: userPlaces,
+    setFetchedData: setUserPlaces,
+  } = useFetch(getUSerPlaces, [])
 
   function handleStartRemovePlace(place) {
     setModalIsOpen(true);
@@ -73,7 +65,7 @@ function App() {
       setErrorUpdatingPlaces({ message: error.message || 'Failed to delete' })
     }
     setModalIsOpen(false);
-  }, [userPlaces]);
+  }, [userPlaces, setUserPlaces]);
 
   function handleError() {
     setErrorUpdatingPlaces(null)
